@@ -154,7 +154,7 @@ public class ErrorProneInMemoryFileManager extends JavacFileManager {
         throw new AssertionError(
             "Refusing to overwrite an existing file (all results from that file would be lost)");
       }
-      Files.write(path, Joiner.on('\n').join(lines).getBytes(UTF_8));
+      Files.write(path, (Joiner.on('\n').join(lines) + '\n').getBytes(UTF_8));
     } catch (IOException e) {
       throw new AssertionError(e);
     }

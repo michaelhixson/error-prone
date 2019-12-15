@@ -38,6 +38,21 @@ public class ConstructorInvokesOverridableNegativeCases {
     safeStatic();
     safePrivate();
 
+    @SuppressWarnings("ConstructorInvokesOverridable")
+    class Suppressed {
+      final int suppressed = unsafe();
+    }
+
+    class SuppressedMembers {
+      @SuppressWarnings("ConstructorInvokesOverridable")
+      final int suppressed = unsafe();
+
+      @SuppressWarnings("ConstructorInvokesOverridable")
+      int suppressed() {
+        return unsafe();
+      }
+    }
+
     // Safe: on a different instance.
     new ConstructorInvokesOverridableNegativeCases().localVariable();
 

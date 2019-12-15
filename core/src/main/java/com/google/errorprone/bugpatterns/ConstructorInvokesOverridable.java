@@ -26,7 +26,9 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -70,10 +72,21 @@ public class ConstructorInvokesOverridable extends ConstructorLeakChecker {
         new TreeScanner<Void, Void>() {
           @Override
           public Void visitClass(ClassTree node, Void data) {
+            if (isSuppressed(node)) {
+              return null;
+            }
             nestedClasses.push(ASTHelpers.getSymbol(node));
             Void result = super.visitClass(node, data);
             nestedClasses.pop();
             return result;
+          }
+
+          @Override
+          public Void visitMethod(MethodTree node, Void aVoid) {
+            if (isSuppressed(node)) {
+              return null;
+            }
+            return super.visitMethod(node, aVoid);
           }
 
           @Override
@@ -82,6 +95,14 @@ public class ConstructorInvokesOverridable extends ConstructorLeakChecker {
               state.reportMatch(describeMatch(node));
             }
             return super.visitMethodInvocation(node, data);
+          }
+
+          @Override
+          public Void visitVariable(VariableTree node, Void aVoid) {
+            if (isSuppressed(node)) {
+              return null;
+            }
+            return super.visitVariable(node, aVoid);
           }
 
           private boolean isOverridable(MethodInvocationTree node) {

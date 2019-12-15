@@ -45,6 +45,8 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 
@@ -229,7 +231,7 @@ public final class Inliner {
     sym.type = typeVar;
     typeVarCache.put(var.getName(), typeVar);
     // Any recursive uses of var will point to the same TypeVar object generated above.
-    typeVar.bound = var.getUpperBound().inline(this);
+    TypeVarCompat.setUpperBound.invoke(typeVar, var.getUpperBound().inline(this));
     typeVar.lower = var.getLowerBound().inline(this);
     return typeVar;
   }
@@ -240,6 +242,44 @@ public final class Inliner {
       return typeVarBinding.get().type();
     } else {
       return inlineAsVar(var);
+    }
+  }
+
+  private static final class TypeVarCompat {
+    static final Setter setUpperBound;
+    static {
+      Setter s;
+      try {
+        // Java 13
+        Method method = TypeVar.class.getDeclaredMethod("setUpperBound", Type.class);
+        s = (typeVar, bound) -> {
+          try {
+            method.invoke(typeVar, bound);
+          } catch (ReflectiveOperationException e) {
+            throw new LinkageError(e.getMessage(), e);
+          }
+        };
+      } catch (NoSuchMethodException e1) {
+        try {
+          // Java 12 and below
+          Field field = TypeVar.class.getDeclaredField("bound");
+          s = (typeVar, bound) -> {
+            try {
+              field.set(typeVar, bound);
+            } catch (ReflectiveOperationException e) {
+              throw new LinkageError(e.getMessage(), e);
+            }
+          };
+        } catch (NoSuchFieldException e2) {
+          e1.addSuppressed(e2);
+          throw new LinkageError(e1.getMessage(), e1);
+        }
+      }
+      setUpperBound = s;
+    }
+
+    interface Setter {
+      void invoke(TypeVar typeVar, Type bound);
     }
   }
 }

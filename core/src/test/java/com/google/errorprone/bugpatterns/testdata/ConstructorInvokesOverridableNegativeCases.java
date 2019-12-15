@@ -154,4 +154,16 @@ public class ConstructorInvokesOverridableNegativeCases {
     // same as above, but try to confuse the bug pattern
     final int safeValue = ConstructorInvokesOverridableNegativeCases.this.unsafe();
   }
+
+  enum AnEnum implements java.util.function.IntSupplier {
+    INSTANCE;
+
+    final String s = name();
+    final int i = getAsInt();
+
+    @Override
+    public int getAsInt() {
+      return s.length();
+    }
+  }
 }

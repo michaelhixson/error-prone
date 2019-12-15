@@ -89,4 +89,18 @@ public class ConstructorInvokesOverridablePositiveCases {
       return 7;
     }
   }
+
+  enum AnEnum implements java.util.function.IntSupplier {
+    INSTANCE {
+      final String s = name();
+
+      @Override
+      public int getAsInt() {
+        return s.length();
+      }
+    };
+
+    // BUG: Diagnostic contains: Constructors should not invoke overridable
+    final int i = getAsInt();
+  }
 }

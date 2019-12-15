@@ -18,6 +18,8 @@ package com.google.errorprone.bugpatterns;
 
 import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.util.ASTHelpers;
@@ -27,6 +29,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
@@ -47,6 +50,9 @@ import javax.lang.model.element.Name;
     severity = WARNING)
 public class ConstructorInvokesOverridable extends ConstructorLeakChecker {
 
+  private static final ImmutableSet<Modifier> ENUM_CONSTANT_MODIFIERS =
+      Sets.immutableEnumSet(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
+
   @Override
   protected void traverse(Tree tree, VisitorState state) {
     // If class is final, no method is overridable.
@@ -64,6 +70,26 @@ public class ConstructorInvokesOverridable extends ConstructorLeakChecker {
     // https://docs.oracle.com/javase/specs/jls/se11/html/jls-15.html#jls-15.9.5
     if (classSym.isAnonymous()) {
       return;
+    }
+    //  "An enum declaration is implicitly final unless it contains at least one
+    //   enum constant that has a class body"
+    //
+    // https://docs.oracle.com/javase/specs/jls/se11/html/jls-8.html#jls-8.9
+    if (classSym.isEnum()) {
+      boolean hasSubclass =
+          classTree.getMembers().stream()
+              .filter(VariableTree.class::isInstance)
+              .map(VariableTree.class::cast)
+              .filter(variableTree -> variableTree.getModifiers().getFlags().containsAll(ENUM_CONSTANT_MODIFIERS))
+              .filter(variableTree -> classSym.type.equals(ASTHelpers.getType(variableTree)))
+              .map(VariableTree::getInitializer)
+              .filter(NewClassTree.class::isInstance)
+              .map(NewClassTree.class::cast)
+              .anyMatch(newClassTree -> newClassTree.getClassBody() != null);
+
+      if (!hasSubclass) {
+        return;
+      }
     }
 
     Deque<ClassSymbol> nestedClasses = new ArrayDeque<>();

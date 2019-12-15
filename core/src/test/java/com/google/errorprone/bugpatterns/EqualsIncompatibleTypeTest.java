@@ -58,7 +58,7 @@ public class EqualsIncompatibleTypeTest {
             "     o.equals(b);",
             "  }",
             "}")
-        .setArgs(Arrays.asList("-source", "1.6", "-target", "1.6"))
+        .setArgs(Arrays.asList("-source", "1.8", "-target", "1.8"))
         .doTest();
   }
 

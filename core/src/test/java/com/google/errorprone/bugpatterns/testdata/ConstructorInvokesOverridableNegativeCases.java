@@ -61,6 +61,12 @@ public class ConstructorInvokesOverridableNegativeCases {
       }
     }
 
+    new java.util.HashMap<String, String>() {
+      {
+        put("Hi", "Mom");
+      }
+    };
+
     new Thread() {
       @Override
       public void run() {

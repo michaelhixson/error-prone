@@ -41,6 +41,26 @@ public class ConstructorInvokesOverridableNegativeCases {
     // Safe: on a different instance.
     new ConstructorInvokesOverridableNegativeCases().localVariable();
 
+    new ConstructorInvokesOverridableNegativeCases() {
+      // Safe: calls its own method and cannot be subclassed because it's anonymous.
+      final int i = unsafe();
+      final int j = this.unsafe();
+    };
+
+    final class Local extends ConstructorInvokesOverridableNegativeCases {
+      // Safe: calls its own method and cannot be subclassed because it's final.
+      final int i = unsafe();
+      final int j = this.unsafe();
+      final int k = Local.this.unsafe();
+    }
+
+    class Parent extends ConstructorInvokesOverridableNegativeCases {
+      class Inner extends ConstructorInvokesOverridableNegativeCases {
+        // OK to call an overridable method of the containing class
+        final int i = Parent.this.unsafe();
+      }
+    }
+
     new Thread() {
       @Override
       public void run() {
@@ -96,11 +116,21 @@ public class ConstructorInvokesOverridableNegativeCases {
         unsafe();
       }
     }
+    class Local2 extends ConstructorInvokesOverridableNegativeCases {
+      {
+        // same as above, but try to confuse the bug pattern
+        ConstructorInvokesOverridableNegativeCases.this.unsafe();
+      }
+    }
   }
 
   // Lookup is handled correctly for inner classes as well
   class Inner {
     // OK to call an overridable method of the containing class
     final int safeValue = unsafe();
+  }
+  class Inner2 extends ConstructorInvokesOverridableNegativeCases {
+    // same as above, but try to confuse the bug pattern
+    final int safeValue = ConstructorInvokesOverridableNegativeCases.this.unsafe();
   }
 }

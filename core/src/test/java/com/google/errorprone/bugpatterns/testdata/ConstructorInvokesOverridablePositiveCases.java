@@ -47,6 +47,24 @@ public class ConstructorInvokesOverridablePositiveCases {
 
     // BUG: Diagnostic contains: Constructors should not invoke overridable
     new Thread(() -> unsafe()).start();
+
+    // final but calls our method
+    final class Local1 {
+      // BUG: Diagnostic contains: Constructors should not invoke overridable
+      final int i = unsafe();
+    }
+
+    // final and implements the method but calls ours
+    final class Local2 extends ConstructorInvokesOverridablePositiveCases {
+      // BUG: Diagnostic contains: Constructors should not invoke overridable
+      final int i = ConstructorInvokesOverridablePositiveCases.this.unsafe();
+    }
+
+    // implements and calls its own method, but non-final
+    class Local3 extends ConstructorInvokesOverridablePositiveCases {
+      // BUG: Diagnostic contains: Constructors should not invoke overridable
+      final int i = unsafe();
+    }
   }
 
   protected int unsafe() {

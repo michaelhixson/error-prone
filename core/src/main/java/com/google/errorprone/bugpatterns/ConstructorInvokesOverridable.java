@@ -97,38 +97,38 @@ public class ConstructorInvokesOverridable extends ConstructorLeakChecker {
     tree.accept(
         new TreeScanner<Void, Void>() {
           @Override
-          public Void visitClass(ClassTree node, Void data) {
+          public Void visitClass(ClassTree node, Void unused) {
             if (isSuppressed(node)) {
               return null;
             }
             nestedClasses.push(ASTHelpers.getSymbol(node));
-            Void result = super.visitClass(node, data);
+            super.visitClass(node, null);
             nestedClasses.pop();
-            return result;
+            return null;
           }
 
           @Override
-          public Void visitMethod(MethodTree node, Void aVoid) {
+          public Void visitMethod(MethodTree node, Void unused) {
             if (isSuppressed(node)) {
               return null;
             }
-            return super.visitMethod(node, aVoid);
+            return super.visitMethod(node, null);
           }
 
           @Override
-          public Void visitMethodInvocation(MethodInvocationTree node, Void data) {
+          public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
             if (isOverridable(node)) {
               state.reportMatch(describeMatch(node));
             }
-            return super.visitMethodInvocation(node, data);
+            return super.visitMethodInvocation(node, null);
           }
 
           @Override
-          public Void visitVariable(VariableTree node, Void aVoid) {
+          public Void visitVariable(VariableTree node, Void unused) {
             if (isSuppressed(node)) {
               return null;
             }
-            return super.visitVariable(node, aVoid);
+            return super.visitVariable(node, null);
           }
 
           private boolean isOverridable(MethodInvocationTree node) {
